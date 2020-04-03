@@ -1,12 +1,27 @@
 # Mocker
 
-Python script to generate framed images for Phone and Tablet devices.
+Single file python script to generate framed images for Phone and Tablet devices.
 
 ## Prerequisites
 
-* [Python 3.4](https://www.python.org/downloads/release/python-340/)
+* [Python 3.5 or above](https://www.python.org/downloads/release/python-350/)
 * [Pillow](https://pypi.org/project/Pillow/)
-* [TkInter](https://docs.python.org/3/library/tkinter.html)
+* [PyQT5](https://pypi.org/project/PyQt5/)
+
+## Installation
+
+* Pillow
+
+```
+pip install Pillow
+```
+
+* PyQT5
+
+```
+pip install PyQt5
+```
+
 
 ## How to Use
 

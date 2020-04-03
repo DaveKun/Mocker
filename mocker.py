@@ -1,97 +1,146 @@
 # -*- coding: utf-8 -*-
 
-from Tkinter import Tk, Label, Entry, Button, Listbox, END
+from PyQt5.QtWidgets import QApplication, QLabel, QWidget, QPushButton, QHBoxLayout, QVBoxLayout, QListWidget, QListWidgetItem, QLineEdit, QFileDialog
+from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtGui import QIcon
 from PIL import Image
 import sys
-import tkFileDialog as filedialog
-import tkMessageBox as MessageBox
 
 # Devices
-class Dispositivos:
-	def __init__(self, x, y, width, height, src, titulo):
+class Device:
+	def __init__(self, x, y, width, height, src, title):
 		self.x = x
 		self.y = y
 		self.width = width
 		self.height = height
 		self.src = src
-		self.titulo = titulo
+		self.title = title
 
 class Mocker:
 	def __init__(self):
-		self.master = Tk()
-		self.master.geometry("500x250")
-		self.master.title('Mock Screens.')
+		self.app = QApplication(sys.argv)
+		self.window = QWidget()
+		self.window.setMinimumSize(QSize(500, 300))
+		self.window.setWindowTitle('Mock Screens.')
+
+		# Main Layout
+		self.layout = QVBoxLayout()
 
 		# Devices
-		tablet_portrait = Dispositivos(96, 113, 681, 911, "tablet_portrait.png", "Tablet Portrait")
-		tablet_landscape = Dispositivos(140, 97, 912, 681, "tablet_landscape.png", "Tablet Landscape")
-		phone_portrait = Dispositivos(83, 101, 482, 858, "telefone_portrait.png", "Phone Landscape")
-		phone_landscape = Dispositivos(103, 80, 859, 483, "telefone_landscape.png", "Phone Portrait")
+		tablet_portrait = Device(96, 113, 681, 911, ":imgs/tablet_portrait.png", "Tablet Portrait")
+		tablet_landscape = Device(140, 97, 912, 681, ":imgs/tablet_landscape.png", "Tablet Landscape")
+		phone_portrait = Device(83, 101, 482, 858, ":imgs/telefone_portrait.png", "Phone Landscape")
+		phone_landscape = Device(103, 80, 859, 483, ":imgs/telefone_landscape.png", "Phone Portrait")
 
-		self.dispositivos = [tablet_portrait, tablet_landscape, phone_portrait, phone_landscape]
+		self.devices = [tablet_portrait, tablet_landscape, phone_portrait, phone_landscape]
 
-		self.labelImgMock = Label(self.master, text="Frame")
-		self.labelImgMock.place( x=10, y=5 )
+		self.labelImgMock = QLabel("Frame")
+		self.layout.addWidget(self.labelImgMock)
 
-		self.listDispositivos = Listbox(self.master)
-		self.listDispositivos.place( x=10, y=30, width=480, height=36 )
+		self.listDevices = QListWidget()
+		self.layout.addWidget(self.listDevices)
 
-		for item in self.dispositivos:
-			self.listDispositivos.insert(END, item.titulo)
+		for item in self.devices:
+			itemWidget = QListWidgetItem(item.title)
+			itemWidget.setIcon(QIcon(item.src))
+
+			self.listDevices.addItem(itemWidget)
 
 		# Images
-		self.labelImgMock = Label(self.master, text="Images to Frame")
-		self.labelImgMock.place( x=10, y=70 )
+		self.labelImgs = QLabel('Images to Frame')
+		self.layout.addWidget(self.labelImgs)
 
-		self.inputImgMock = Entry(self.master, width=43)
-		self.inputImgMock.place( x=10, y=100 )
+		self.imageSelectLayout = QHBoxLayout()
 
-		self.btnSelecionarArquivoImport = Button(self.master, text="Search", command=self.selecionaMock)
-		self.btnSelecionarArquivoImport.place( x=410, y=100 )
+		self.inputImgMock = QLineEdit()
+		self.imageSelectLayout.addWidget(self.inputImgMock)
+
+		self.btnSelecionarArquivoImport = QPushButton("Search")
+		self.btnSelecionarArquivoImport.clicked.connect(self.selectImagesToMock)
+		self.imageSelectLayout.addWidget(self.btnSelecionarArquivoImport)
+
+		self.layout.addLayout(self.imageSelectLayout)
 
 		# Folder to Export
-		self.labelFolderExport = Label(self.master, text="Folder which will receive framed images")
-		self.labelFolderExport.place( x=10, y=130 )
+		self.labelFolderExport = QLabel('Folder which will receive framed images')
+		self.layout.addWidget(self.labelFolderExport)
 
-		self.inputFolderExport = Entry(self.master, width=43)
-		self.inputFolderExport.place( x=10, y=160 )
+		self.folderSelectLayout = QHBoxLayout()
 
-		self.btnSelecionarArquivoExport = Button(self.master, text="Search", command=self.selecionaPastaExport)
-		self.btnSelecionarArquivoExport.place( x=410, y=160 )
+		self.inputFolderExport = QLineEdit()
+		self.folderSelectLayout.addWidget(self.inputFolderExport)
+
+		self.btnSelecionarArquivoExport = QPushButton("Search")
+		self.btnSelecionarArquivoExport.clicked.connect(self.selectFolderToExport)
+		self.folderSelectLayout.addWidget(self.btnSelecionarArquivoExport)
+
+		self.layout.addLayout(self.folderSelectLayout)
 
 		# Execution buttons
-		self.btnExecutar = Button(self.master, text="Run", command=self.executaMocks)
-		self.btnExecutar.place( x=410, y=200 )
+		self.btnRun = QPushButton("Run")
+		self.btnRun.clicked.connect(self.runMocks)
 
-		self.btnCancelar = Button(self.master, text="Cancel", command=self.cancelar)
-		self.btnCancelar.place( x=325, y=200 )
+		self.btnCancel = QPushButton('Cancel')
+		self.btnCancel.clicked.connect(self.cancel)
 
-	def cancelar(self):
-		self.master.destroy()
+		self.btnLayout = QHBoxLayout()
+		self.btnLayout.addStretch(1)
+		self.btnLayout.addWidget(self.btnRun)
+		self.btnLayout.addWidget(self.btnCancel)
 
-	def selecionaMock(self):
-		tiposArquivos = [('PNG Images', '.png'),('JPG Images', '.jpg'), ('JPEG Images', '.jpeg')]
-		fl = filedialog.askopenfilenames(parent=self.master, filetypes=tiposArquivos, title="Selecione os arquivos")
-		self.inputImgMock.insert(0, fl)
+		self.layout.addLayout(self.btnLayout)
 
-	def selecionaPastaExport(self):
-		folder = filedialog.askdirectory(parent=self.master)
-		self.inputFolderExport.insert(0, folder)
+		# Turn window visible
+		self.window.setLayout(self.layout)
+		self.window.show()
 
-	def executaMocks(self):
+	def cancel(self):
+		self.app.quit()
+		sys.exit()
+
+	def selectImagesToMock(self):
+		files = QFileDialog.getOpenFileNames(self.window, 'Select the images', '', 'PNG Files (*.png) ;; JPG Files (*.jpg) ;; JPEG Files (*.jpeg)')
+		strFiles = ''
+
+		for file in files:
+			if(strFiles == ''):
+				strFiles += file[0]
+			else:
+				strFiles += ','
+				strFiles += file[0]
+
+		self.inputImgMock.setText(files)
+
+	def selectFolderToExport(self):
+		directory = str(QFileDialog.getExistingDirectory(self.window, "Select a directory"))
+		self.inputFolderExport.setText(directory)
+
+	def runMocks(self):
 		imagens = self.master.tk.splitlist(self.inputImgMock.get())
-		index = map(int, self.listDispositivos.curselection())
+		index = map(int, self.listDevices.curselection())
 		pasta = self.inputFolderExport.get()
 
 		if(len(index) == 0):
-			MessageBox.showwarning("Oops","Image Frame not selected")
+			msg = QMessageBox()
+			msg.setIcon(QMessageBox.Warning)
+
+			msg.setText("Image Frame not selected")
+			msg.setWindowTitle("Oops")
+			msg.setStandardButtons(QMessageBox.Ok)
+
 			return
 
 		if(len(imagens) == 0):
-			MessageBox.showwarning("Oops","Images not selected")
+			msg = QMessageBox()
+			msg.setIcon(QMessageBox.Warning)
+
+			msg.setText("Images not selected")
+			msg.setWindowTitle("Oops")
+			msg.setStandardButtons(QMessageBox.Ok)
+
 			return
 
-		dispositivo = self.dispositivos[index[0]]
+		dispositivo = self.devices[index[0]]
 		background = Image.open(dispositivo.src)
 
 		for i in range(len(imagens)):
@@ -105,8 +154,9 @@ class Mocker:
 			i += 1
 
 	def run(self):
-		self.master.mainloop()
+		# Start the event loop
+		sys.exit(self.app.exec_())
 
-# Start
+# Start Application
 app = Mocker()
 app.run()
